@@ -3,3 +3,71 @@ body {
     
 }
 
+.horizontal-menu {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+.horizontal-menu li {
+	display: inline-block;
+}
+
+.horizontal-menu li a {
+	display: block;
+	padding: 10px 20px;
+	text-decoration: none;
+}
+
+.horizontal-menu li,
+li.draggable-mirror {
+	border: 1px solid black;
+	padding: 10px !important;
+	margin: 0 5px !important;
+	width: 100px !important;
+	text-align: center;
+	cursor: grab !important;
+	list-style: none;
+	line-height: 20px;
+	height: 40px !important;
+	font-weight: bold;
+	color: #fff;
+}
+
+.horizontal-menu li:active {
+	cursor: grabbing !important;
+}
+
+.board-table {
+	border-collapse: collapse;
+	margin: auto; 
+}
+
+.board-table td {
+	border: 1px solid #000;
+	padding: 10px;
+	text-align: center; 
+	width: 45px; 
+	height: 30px; 
+	background-color: white;
+}
+
+.bg-battlefield {
+	background-color: rgb(215, 222, 255);
+}
+
+.base-bg {
+	background-image: url("/static/pics/Wojna_O_Statki.png");;
+
+	background-size:100%;
+}
+
+.fields-bg {
+	background-image: url("/static/pics/SteampunkBG.png");
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+.center-index {
+	height: max-content;
+}
