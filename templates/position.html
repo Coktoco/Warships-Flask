@@ -7,7 +7,9 @@
 {% block body %}
 
 <div class="content text-center">
-    <h1 class="pt-2 text-white">Gra w Statki</h1>
+    <div class="container mt-3 col-3 bg-dark">
+        <h1 class=" py-2 text-white">Gra w Statki</h1>
+    </div>
 
     <div class="row justify-content-center mb-3 ml-4 col-12">
         <div class="col-2 justify-content-center align-items-center fields-bg rounded shadow">
@@ -79,7 +81,7 @@
                     {% endfor %}
                     </table>
                 </div>
-                <div class="bg-battlefield bg-gradient px-3 py-3 rounded shadow " hidden>
+                <div class="bg-battlefield bg-gradient px-3 py-3 rounded shadow " hidden >
                     <h2>Shots</h2>
                 <table class="board-table">
                 {% for row in shotsDisplay %}

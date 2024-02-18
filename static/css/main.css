@@ -58,8 +58,10 @@ li.draggable-mirror {
 
 .base-bg {
 	background-image: url("/static/pics/Wojna_O_Statki.png");;
-
-	background-size:100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+	background-attachment: fixed;
 }
 
 .fields-bg {

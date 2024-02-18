@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Task Master</title>
+{% endblock %}
+
+{% block body %}
+<div class="col-4 my-5 py-5 container-fluid text-center bg-dark rounded h-100 center-index">
+    <h1 class="text-white">GRA W STATKI</h1>
+</div>
+<div class="col-4 my-5 py-5 container-fluid text-center bg-dark rounded h-100 center-index">
+    <div>
+        <h1 class="text-white"> YOU LOST!</h1>
+    </div>
+</div>
+<div class="col-4 my-5 py-5 container-fluid text-center bg-dark rounded h-100 center-index">
+    <div>
+        <h1 class="text-white"> NO Congratulations for YOU!</h1>
+    </div>
+</div>
+<div class="col-4 my-5 py-5 container-fluid text-center bg-dark rounded h-100 center-index">
+    <form action="/reset" method="get">
+        <button type="submit">Try Again You Looser</button>
+    </form>
+</div>
+{% endblock %}
