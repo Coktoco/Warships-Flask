@@ -32,9 +32,9 @@ Battleship Game is a Flask-based web application written entirely in Python. Thi
 
 ## Tech stack
 
-- **Flask**: For handling the backend and routing.
+- **Flask**: Framework for handling the backend and routing.
 - **Python**: For game logic and backend functionality.
-- **HTML & CSS**: For frontend display.
+- **HTML & CSS (Bootstrap)**: For frontend display.
 - **JavaScript**: For enhancing interactivity and user experience.
 
 ## Installation
