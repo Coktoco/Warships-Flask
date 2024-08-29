@@ -41,8 +41,8 @@ Battleship Game is a Flask-based web application written entirely in Python. Thi
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/battleship-game.git
-   cd battleship-game
+   git clone https://github.com/Coktoco/Warships-Flask.git
+   cd Warships-Flask
 
 2. **Install Flask framework**:
    ```bash
