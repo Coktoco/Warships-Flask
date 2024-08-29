@@ -4,7 +4,7 @@
 
 Battleship Game is a Flask-based web application written entirely in Python. This game allows players to place their ships on a grid and engage in a strategic battle against an AI opponent. The goal is to sink all of the opponent's ships before they sink yours. 
 
-**The game is available in Polish.**
+**The game is available in English.**
 
 ## Features
 
@@ -81,4 +81,15 @@ For any questions or more information, feel free to contact me via email or Link
 ## Screenshots
 
 Below are some screenshots of the working project:
-   
+
+
+Home page:
+<img width="1512" alt="Zrzut ekranu 2024-08-29 o 20 36 59" src="https://github.com/user-attachments/assets/edf522b7-1cc5-4211-862f-089b92a4558a">
+
+Battlefield will all warships placed:
+<img width="1512" alt="Zrzut ekranu 2024-08-29 o 20 39 54" src="https://github.com/user-attachments/assets/e80d7527-6929-4b8d-9f46-4f8fae670cd3">
+
+Intense game in progress:
+<img width="1512" alt="Zrzut ekranu 2024-08-29 o 20 44 47" src="https://github.com/user-attachments/assets/1701a186-fb9b-4733-a370-13741108ae95">
+
+
