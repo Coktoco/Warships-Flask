@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect
+
 import random
 
 app = Flask(__name__)
@@ -12,7 +13,11 @@ currentShotsAI = 0
 currentAI = False
 score = 0
 AIscore = 0
-wasHitOn = [0,0,0]
+
+target_mode = False
+target_stack = []
+sunk_ships = 0
+
 
 # Memory
 hits_memory = []  
@@ -142,6 +147,17 @@ def add_ship(x, y, rotation, ship_size, positionsDisplay):
     except IndexError:  
         return False
 
+def place_ships_for_player():
+    for ship_size, quantity in available_ships.items():
+        placed_ships = 0
+        while placed_ships < quantity:
+            x = random.randint(1, len(positionsDisplay) - 1)
+            y = random.randint(1, len(positionsDisplay[0]) - 1)
+            rotation = random.choice([1, 2, 3, 4])
+            if is_valid_position(x, y, rotation, ship_size, positionsDisplay):
+                add_ship(x, y, rotation, ship_size, positionsDisplay)
+                placed_ships += 1
+
 # AI
 
 def place_ai_ships():
@@ -155,50 +171,140 @@ def place_ai_ships():
                 add_ship(x, y, rotation, ship_size, positionsDisplayAI)
                 placed_ships += 1
 
+
 def ai_shoots():
-    global AIscore, currentShots, shotsDisplayAI, currentShotsAI, cursor
+    global currentShotsAI, AIscore, shotsDisplayAI, positionsDisplay, target_mode, target_stack, sunk_ships
 
-    for x in range(1, 11):
-        for y in range(1, 11):
-            if shotsDisplayAI[x][y] == cursor:
-                make_ai_shot(x,y)
-                return
-            if shotsDisplayAI[x][y] == hit:
-                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                    nx, ny = x + dx, y + dy
-                    if 1 <= nx <= 10 and 1 <= ny <= 10 and shotsDisplayAI[nx][ny] == 0:
-                        make_ai_shot(nx, ny)
-                        currentShotsAI += 1
-                        return
-                    elif 1 <= nx <= 10 and 1 <= ny <= 10 and shotsDisplayAI[nx][ny] == hit:
-                        nnx, nny = nx + dx, ny + dy
-                        if 1 <= nnx <= 10 and 1 <= nny <= 10 and shotsDisplayAI[nnx][nny] == 0:
-                            make_ai_shot(nnx, nny)
-                            currentShotsAI += 1
-                            return
+    # Jeśli AI nie śledzi celu i radar jest naładowany, użyj radaru
+    if not target_mode and currentShotsAI >= 5:
+        rx, ry = random.randint(1, 10), random.randint(1, 10)
+        use_radar(rx, ry, shotsDisplayAI, positionsDisplay)
+        currentShotsAI = 0
 
-    while True:
-        x, y = random.randint(1, 10), random.randint(1, 10)
-        if shotsDisplayAI[x][y] == 0:
-            if currentShotsAI >= 5:
-                use_radar(x, y, shotsDisplayAI, positionsDisplay)
-                currentShotsAI = 1
-            else:
+    # Jeśli AI nie śledzi celu, strzela losowo
+    if not target_mode:
+        while True:
+            x, y = random.randint(1, 10), random.randint(1, 10)
+            if shotsDisplayAI[x][y] == 0:
                 make_ai_shot(x, y)
-                currentShotsAI += 1
-            break
+                currentShotsAI += 1  # Zwiększamy licznik po każdym strzale
+                if shotsDisplayAI[x][y] == hit:
+                    target_mode = True
+                    target_stack.append((x, y))  # Rozpoczęcie śledzenia celu
+                return
+
+    # Jeśli AI nie śledzi celu, strzela losowo
+    if not target_mode:
+        while True:
+            x, y = random.randint(1, 10), random.randint(1, 10)
+            if shotsDisplayAI[x][y] == 0:
+                make_ai_shot(x, y)
+                if shotsDisplayAI[x][y] == hit:
+                    target_mode = True
+                    target_stack.append((x, y))  # Rozpoczynamy śledzenie nowego celu
+                return
+
+    # Tryb "śledzenia celu" - jeśli mamy co najmniej dwa trafienia, dedukujemy kierunek
+    if len(target_stack) >= 2:
+        x_last, y_last = target_stack[-1]
+        x_prev, y_prev = target_stack[-2]
+        dx = x_last - x_prev
+        dy = y_last - y_prev
+
+        # Próba kontynuowania strzału w tym samym kierunku
+        nx = x_last + dx
+        ny = y_last + dy
+        if 1 <= nx <= 10 and 1 <= ny <= 10 and shotsDisplayAI[nx][ny] == 0:
+            make_ai_shot(nx, ny)
+            if shotsDisplayAI[nx][ny] == hit:
+                target_stack.append((nx, ny))
+            else:
+                # Otrzymano pudło poza ciągiem trafień - sprawdzenie zatopienia statku
+                check_if_sunk(x_last, y_last)
+            return
+        else:
+            # Próba w przeciwnym kierunku
+            x_first, y_first = target_stack[0]
+            nx = x_first - dx
+            ny = y_first - dy
+            if 1 <= nx <= 10 and 1 <= ny <= 10 and shotsDisplayAI[nx][ny] == 0:
+                make_ai_shot(nx, ny)
+                if shotsDisplayAI[nx][ny] == hit:
+                    target_stack.insert(0, (nx, ny))
+                else:
+                    # Otrzymano pudło poza ciągiem trafień w przeciwnym kierunku
+                    check_if_sunk(x_first, y_first)
+                return
+
+    # Jeśli nie ma wystarczającej liczby trafień lub nie udało się kontynuować w ustalonym kierunku,
+    # przechodzimy do przeszukiwania sąsiadów ostatniego trafienia
+    while target_stack:
+        x, y = target_stack[-1]
+        found = False
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 1 <= nx <= 10 and 1 <= ny <= 10 and shotsDisplayAI[nx][ny] == 0:
+                make_ai_shot(nx, ny)
+                found = True
+                if shotsDisplayAI[nx][ny] == hit:
+                    target_stack.append((nx, ny))
+                return
+        if not found:
+            target_stack.pop()
+
+    # Jeśli stos się opróżnił, resetujemy tryb śledzenia i wracamy do losowego strzelania
+    target_mode = False
+    ai_shoots()
 
 def make_ai_shot(x, y):
-    global AIscore, shotsDisplayAI
+    global AIscore, shotsDisplayAI, positionsDisplay
 
-    if positionsDisplay[x][y] == 'X':  
+    if positionsDisplay[x][y] == 'X':  # Trafienie
         shotsDisplayAI[x][y] = hit
         positionsDisplay[x][y] = hit
-        AIscore += 100  
+        AIscore += 100
+        # Usunięto wywołanie check_if_sunk tutaj
     else:
         shotsDisplayAI[x][y] = miss
         positionsDisplay[x][y] = miss
 
+def check_if_sunk(x, y):
+    global target_mode, target_stack, shotsDisplayAI, positionsDisplay, sunk_ships
+    stack = [(x, y)]
+    visited = set()
+    is_sunk = True
+
+    # Przeszukiwanie połączonych trafień (DFS)
+    while stack:
+        cx, cy = stack.pop()
+        if (cx, cy) in visited:
+            continue
+        visited.add((cx, cy))
+
+        for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = cx + dx, cy + dy
+            if 1 <= nx <= 10 and 1 <= ny <= 10:
+                if positionsDisplay[nx][ny] == 'X':  # Nie trafiona część statku
+                    is_sunk = False
+                elif positionsDisplay[nx][ny] == hit and (nx, ny) not in visited:
+                    stack.append((nx, ny))
+
+    # Jeśli cały statek został zatopiony
+    if is_sunk:
+        sunk_ships += 1
+        for (sx, sy) in visited:
+            mark_surrounding_area(sx, sy)  # Oznacz otaczające pola jako MISS
+        target_mode = False
+        target_stack.clear()
+
+def mark_surrounding_area(x, y):
+    global shotsDisplayAI, positionsDisplay
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    for dx, dy in directions:
+        nx, ny = x + dx, y + dy
+        if 1 <= nx <= 10 and 1 <= ny <= 10 and shotsDisplayAI[nx][ny] == 0:
+            shotsDisplayAI[nx][ny] = miss
+            positionsDisplay[nx][ny] = miss
 
 # POWER-UPS
 
@@ -225,14 +331,15 @@ def index():
 
 @app.route('/position', methods=['GET', 'POST'])
 def position():
-    global currentAI
-    if active_ships == available_ships:
-        if currentAI == False:
-            place_ai_ships()
-            currentAI = True
-        return redirect('/battlefield')
-    else:
-        return render_template('position.html', positionsDisplay=positionsDisplay, shotsDisplay=shotsDisplay, positionsDisplayAI=positionsDisplayAI, shotsDisplayAI=shotsDisplayAI)
+    # global currentAI
+    # if active_ships == available_ships:
+    #     if currentAI == False:
+    place_ships_for_player()
+    place_ai_ships()
+    currentAI = True
+    return redirect('/battlefield')
+    # else:
+        # return render_template('position.html', positionsDisplay=positionsDisplay, shotsDisplay=shotsDisplay, positionsDisplayAI=positionsDisplayAI, shotsDisplayAI=shotsDisplayAI)
 
 @app.route('/position/add', methods=['POST'])
 def add_position():
