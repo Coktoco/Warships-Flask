@@ -85,6 +85,10 @@ active_ships = {length: 0 for length in available_ships}
 def is_valid_position(x, y, rotation, ship_size, positionsDisplay):
     max_index = len(positionsDisplay) - 1
 
+    # Jeśli statek jest długości 1, wystarczy sprawdzić, czy pole jest wolne
+    if ship_size == 1:
+        return positionsDisplay[x][y] == 0 and is_surrounding_area_free(x, y, positionsDisplay)
+
     try:
         if rotation == 1:  # Left
             if y - ship_size < 1: return False  
@@ -175,8 +179,18 @@ def place_ai_ships():
 def ai_shoots():
     global currentShotsAI, AIscore, shotsDisplayAI, positionsDisplay, target_mode, target_stack, sunk_ships
 
+    for x in range(len(shotsDisplayAI)):
+        for y in range(len(shotsDisplayAI[0])):  # Iterujemy po kolumnach w wierszach
+            if shotsDisplayAI[x][y] == cursor:  # Jeśli AI widzi kursor
+                make_ai_shot(x, y)  # AI strzela w tę pozycję
+                currentShotsAI += 1  # Zwiększamy licznik po każdym strzale
+                if shotsDisplayAI[x][y] == hit:
+                    target_mode = True
+                    target_stack.append((x, y))  # Rozpoczęcie śledzenia celu
+                return
+
     # Jeśli AI nie śledzi celu i radar jest naładowany, użyj radaru
-    if not target_mode and currentShotsAI >= 5:
+    if not target_mode and currentShotsAI >= 3:
         rx, ry = random.randint(1, 10), random.randint(1, 10)
         use_radar(rx, ry, shotsDisplayAI, positionsDisplay)
         currentShotsAI = 0
@@ -329,17 +343,27 @@ def use_radar(x, y, display, positions):
 def index():
     return render_template('index.html')
 
+
 @app.route('/position', methods=['GET', 'POST'])
 def position():
-    # global currentAI
-    # if active_ships == available_ships:
-    #     if currentAI == False:
-    place_ships_for_player()
-    place_ai_ships()
-    currentAI = True
-    return redirect('/battlefield')
-    # else:
-        # return render_template('position.html', positionsDisplay=positionsDisplay, shotsDisplay=shotsDisplay, positionsDisplayAI=positionsDisplayAI, shotsDisplayAI=shotsDisplayAI)
+    global currentAI
+    if active_ships == available_ships:
+        if currentAI == False:
+            #place_ships_for_player()
+            place_ai_ships()
+            currentAI = True
+            return redirect('/battlefield')
+    else:
+        return render_template('position.html', positionsDisplay=positionsDisplay, shotsDisplay=shotsDisplay, positionsDisplayAI=positionsDisplayAI, shotsDisplayAI=shotsDisplayAI)
+
+
+@app.route('/auto_setup', methods=['GET'])
+def auto_setup():
+    global positionsDisplay
+    place_ships_for_player()  # Automatyczne ustawianie statków gracza
+    place_ai_ships()  # Ustawianie statków AI
+    return redirect('/battlefield')  # Przejście do strony rozgrywki
+
 
 @app.route('/position/add', methods=['POST'])
 def add_position():
@@ -366,7 +390,7 @@ def add_position():
 
 @app.route('/battlefield', methods=['GET', 'POST'])
 def battlefield():
-    
+
     return render_template('battlefield.html', positionsDisplay=positionsDisplay, shotsDisplay=shotsDisplay, positionsDisplayAI=positionsDisplayAI, shotsDisplayAI=shotsDisplayAI, score=score, AIscore=AIscore, currentShots=currentShots, currentShotsAI=currentShotsAI)
 
 @app.route('/battlefield/shot', methods=['POST'])
