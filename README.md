@@ -51,6 +51,7 @@ Battleship Game is a Flask-based web application written entirely in Python. Thi
 3. **Run the application**:
    ```bash
    python3 app.py
+   (OR) flask run
 Game will start and be accessible at http://127.0.0.1:port
 
 ## Usage
